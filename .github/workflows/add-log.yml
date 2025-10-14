@@ -28,7 +28,7 @@ jobs:
             const safeTitle = payload.title.replace(/[^a-z0-9\- ]/gi, '').replace(/\s+/g,'-').slice(0,40);
             const filename = `logs/${date}-${ts}-${safeTitle || 'log'}.md`;
 
-            const md =`---
+            const md = `---
 title: "${payload.title.replace(/"/g,'\\"')}"
 date: "${new Date().toISOString()}"
 tags: ${JSON.stringify(payload.tags || [])}
