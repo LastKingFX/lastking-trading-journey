@@ -1,0 +1,51 @@
+name: Add Log via Dispatch
+
+on:
+  repository_dispatch:
+    types: [add_log]
+
+permissions:
+  contents: write
+
+jobs:
+  add-log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create log file from payload
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const payload = github.context.payload.client_payload || {};
+            const core = require('@actions/core');
+            const context = github.context;
+            if(!payload.content || !payload.title){
+              core.setFailed('Missing client_payload.content or client_payload.title');
+              return;
+            }
+
+            const date = new Date().toISOString().slice(0,10);
+            const ts = Math.floor(Date.now()/1000);
+            const safeTitle = payload.title.replace(/[^a-z0-9\- ]/gi, '').replace(/\s+/g,'-').slice(0,40);
+            const filename = `logs/${date}-${ts}-${safeTitle || 'log'}.md`;
+
+            const md = `---
+title: "${payload.title.replace(/"/g,'\\"')}"
+date: "${new Date().toISOString()}"
+tags: ${JSON.stringify(payload.tags || [])}
+session: "${payload.session || ''}"
+---
+${payload.content}
+`;
+
+            const contentBase64 = Buffer.from(md, 'utf8').toString('base64');
+
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filename,
+              message: `Add log: ${filename}`,
+              content: contentBase64,
+              branch: 'main'
+            });
+
+            core.info(`Created ${filename}`);
