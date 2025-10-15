@@ -1,0 +1,47 @@
+name: Add Daily Log
+
+on:
+  schedule:
+    - cron: "6 6 * * *"  # Runs every day at 06:06 UTC (08:06 Namibia time)
+  workflow_dispatch:
+
+jobs:
+  add-log:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create daily log file
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          mkdir -p logs
+          FILE="logs/${DATE}.md"
+
+          echo "---" > $FILE
+          echo "title: Trading Log - ${DATE}" >> $FILE
+          echo "date: ${DATE}" >> $FILE
+          echo "session: New York" >> $FILE
+          echo "---" >> $FILE
+          echo "" >> $FILE
+          echo "### Bias" >> $FILE
+          echo "_(Your daily bias here)_" >> $FILE
+          echo "" >> $FILE
+          echo "### Key Levels" >> $FILE
+          echo "- Resistance: " >> $FILE
+          echo "- Support: " >> $FILE
+          echo "" >> $FILE
+          echo "### Trade Notes" >> $FILE
+          echo "_(Describe your setups and reasoning here)_" >> $FILE
+          echo "" >> $FILE
+          echo "### Outcome" >> $FILE
+          echo "_(Result, what went right/wrong, lesson)_" >> $FILE
+
+      - name: Commit and push log
+        run: |
+          git config --global user.name "LastKingFX"
+          git config --global user.email "github-actions@github.com"
+          git add logs/
+          git commit -m "Add daily trading log for $(date -u +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
