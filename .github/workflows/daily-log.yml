@@ -1,0 +1,49 @@
+name: Add Daily Log
+
+on:
+  schedule:
+    # Runs every day at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate daily log
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const date = new Date().toISOString().split('T')[0];
+          const folder = path.join('logs');
+          if (!fs.existsSync(folder)) fs.mkdirSync(folder);
+          const md = \`---
+title: 'Daily Log'
+date: \${new Date().toISOString()}
+---
+
+# \${date}
+This is the daily analysis log generated automatically by LastKing Trading Journey 🚀
+
+\`;
+          fs.writeFileSync(path.join(folder, \`\${date}.md\`), md);
+          console.log('✅ Daily log file created:', \`\${date}.md\`);
+          "
+
+      - name: Commit and push log
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "github-actions"
+          git add .
+          git commit -m "Add daily log for $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
